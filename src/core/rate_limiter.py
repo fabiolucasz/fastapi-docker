@@ -5,7 +5,6 @@ from fastapi import HTTPException, Request
 in_memory_storage = {}
 
 class RateLimiter:
-    """Rate limiter custom sem dependência externa"""
     
     def __init__(self, max_requests: int, time_window: int):
         self.max_requests = max_requests
@@ -52,10 +51,10 @@ def check_rate_limit(request: Request, limiter: RateLimiter, endpoint: str):
         )
 
 def check_brute_force(ip: str, email: str) -> bool:
-    """Verifica se há tentativas suspeitas de brute force (simplificado sem Redis)"""
+    """Verifica se há tentativas suspeitas de brute force"""
     # Em memória local, não implementamos brute force detection
     return False
 
 def reset_failed_attempts(ip: str, email: str):
-    """Reseta contador de tentativas falhas após login bem-sucedido (simplificado)"""
+    """Reseta contador de tentativas falhas após login bem-sucedido"""
     pass

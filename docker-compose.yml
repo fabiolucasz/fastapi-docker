@@ -1,18 +1,20 @@
 services:
-  fastapi-app:
-    build: .  # Mantenha essa se for personalizada
-    container_name: fastapi-app
+  api:
+    build: .
+    ports:
+      - "8000:8000"
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - DOMAIN=${DOMAIN}
       - ENVIRONMENT=${ENVIRONMENT}
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
+    volumes:
+      - ./src:/app/src
+    container_name: fastapi-app
     networks:
       - monitoring
-    restart: unless-stopped
 
   prometheus:
     image: prom/prometheus:v2.52.0  # Última versão estável até maio/2025
@@ -39,6 +41,7 @@ services:
     restart: unless-stopped
     volumes:
       - grafana-storage:/var/lib/grafana  # Persistência opcional
+      - ./grafana/provisioning:/etc/grafana/provisioning
 
 networks:
   monitoring:

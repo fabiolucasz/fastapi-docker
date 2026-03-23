@@ -1,6 +1,6 @@
 # FastAPI Docker Authentication
 
-API FastAPI com sistema de autenticação completo usando JWT, containerizada com Docker.
+API FastAPI com sistema de autenticação completo usando JWT, containerizada com Docker e monitoramento integrado.
 
 ## 🚀 Features
 
@@ -10,6 +10,10 @@ API FastAPI com sistema de autenticação completo usando JWT, containerizada co
 - **Multi-ambiente** - SQLite (dev) / PostgreSQL (prod)
 - **Docker** - Containerização completa
 - **FastAPI** - OpenAPI/Swagger automático
+- **📊 Monitoramento** - Prometheus + Grafana integrados
+- **🔒 Rate Limiting** - Proteção contra brute-force
+- **📝 Logs Estruturados** - JSON logging com structlog
+- **📈 Métricas** - Prometheus metrics integradas
 
 ## 📁 Estrutura
 
@@ -17,16 +21,27 @@ API FastAPI com sistema de autenticação completo usando JWT, containerizada co
 fastapi-docker/
 ├── src/
 │   ├── core/
-│   │   ├── config.py      # Configurações de ambiente
-│   │   ├── crud.py        # Operações CRUD
-│   │   ├── db.py          # Conexão com banco
-│   │   ├── deps.py        # Dependências FastAPI
-│   │   ├── models.py      # Modelos SQLAlchemy
-│   │   ├── schemas.py     # Schemas Pydantic
-│   │   └── security.py    # JWT e hash de senhas
-│   └── main.py            # Aplicação FastAPI
+│   │   ├── config.py           # Configurações de ambiente
+│   │   ├── crud.py             # Operações CRUD
+│   │   ├── db.py               # Conexão com banco
+│   │   ├── deps.py             # Dependências FastAPI
+│   │   ├── logging_config.py   # Configuração de logs estruturados
+│   │   ├── metrics.py          # Métricas Prometheus
+│   │   ├── models.py           # Modelos SQLAlchemy
+│   │   ├── rate_limiter.py     # Rate limiting in-memory
+│   │   ├── schemas.py          # Schemas Pydantic
+│   │   └── security.py         # JWT e hash de senhas
+│   └── main.py                 # Aplicação FastAPI
+├── grafana/
+│   └── provisioning/
+│       ├── datasources/
+│       │   └── prometheus.yml  # Configuração datasource
+│       └── dashboards/
+│           ├── dashboard.yml   # Configuração de dashboards
+│           └── fastapi-dashboard.json  # Dashboard pré-configurado
 ├── Dockerfile
 ├── docker-compose.yml
+├── prometheus.yml              # Configuração Prometheus
 ├── pyproject.toml
 └── .env
 ```
@@ -88,6 +103,10 @@ docker compose logs -f
 
 - `GET /users/me` - Dados do usuário autenticado
 
+### Monitoramento
+
+- `GET /metrics` - Métricas Prometheus (scrape endpoint)
+
 ### Documentação
 
 - `GET /docs` - Swagger UI
@@ -120,6 +139,7 @@ curl -X GET "http://localhost:8000/users/me" \
 
 ## 🛠️ Tecnologias
 
+### Backend
 - **FastAPI** - Framework web
 - **SQLAlchemy** - ORM
 - **Pydantic** - Validação
@@ -128,7 +148,44 @@ curl -X GET "http://localhost:8000/users/me" \
 - **Poetry** - Dependências
 - **Docker** - Containerização
 
-## 📝 Notas Técnicas
+### Monitoramento
+- **Prometheus** - Coleta de métricas
+- **Grafana** - Visualização e dashboards
+- **structlog** - Logs estruturados
+- **prometheus-client** - Métricas Python
+
+## � Monitoramento
+
+### Serviços Disponíveis
+
+- **FastAPI**: http://localhost:8000
+- **Grafana**: http://localhost:3000 (admin/admin)
+- **Prometheus**: http://localhost:9090
+
+### Dashboard Automático
+
+Dashboard "Fastapi-app" provisionado automaticamente com:
+- **Erros de Login**: Gauge com percentual de falhas
+- **Throughput**: Requisições por minuto
+- **Uso de CPU**: Métricas em tempo real
+- **Séries Temporais**: Histórico de métricas
+
+### Métricas Disponíveis
+
+- `auth_attempts_total`: Tentativas de autenticação
+- `request_duration_seconds`: Tempo de resposta das requisições
+- `process_cpu_seconds_total`: Uso de CPU
+- `user_operations_total`: Operações de usuários
+
+### Logs Estruturados
+
+Logs em formato JSON com:
+- Timestamps ISO
+- Níveis de log (info, warning, error)
+- Contexto de requisição (IP, endpoint, user_id)
+- Métricas de performance
+
+## � Notas Técnicas
 
 ### Senhas
 - Truncamento automático para 72 bytes (limite bcrypt)
@@ -151,6 +208,15 @@ curl -X GET "http://localhost:8000/users/me" \
 - Tokens com expiração configurável
 - CORS configurável por ambiente
 - Injeção de dependência para autenticação
+- **Rate Limiting**: Proteção contra brute-force (in-memory)
+- **Métricas de Segurança**: Tentativas de login bloqueadas
+
+### Rate Limiting
+
+- **Login**: 5 tentativas por minuto
+- **Brute Force Detection**: Bloqueio após 10 falhas
+- **Endpoints**: Rate limit por IP e endpoint
+- **Storage**: In-memory (reset ao reiniciar)
 
 ## 🐛 Troubleshooting
 
@@ -166,6 +232,16 @@ curl -X GET "http://localhost:8000/users/me" \
 3. **"Database connection failed"**
    - Dev: Verificar permissões do arquivo SQLite
    - Prod: Verificar variáveis PostgreSQL
+
+4. **"Dashboard não carrega no Grafana"**
+   - Verificar se Prometheus está coletando métricas: http://localhost:9090/targets
+   - Reiniciar Grafana: `docker compose restart grafana`
+   - Verificar logs: `docker compose logs grafana | grep provisioning`
+
+5. **"Métricas não aparecem"**
+   - Verificar endpoint: http://localhost:8000/metrics
+   - Verificar configuração Prometheus: `prometheus.yml`
+   - Verificar rede Docker: containers devem estar na rede `monitoring`
 
 ### Docker Issues
 
