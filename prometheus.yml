@@ -1,0 +1,17 @@
+global:
+  scrape_interval: 15s  # Intervalo global para coleta de métricas
+  evaluation_interval: 15s  # Intervalo para avaliação de regras
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']  # O próprio Prometheus
+
+  - job_name: 'fastapi-app'
+    metrics_path: /metrics  # Caminho onde o FastAPI expõe as métricas
+    static_configs:
+      - targets: ['fastapi-app:8000']  # Nome do container + porta
+  - job_name: simple_server
+    metrics_path: /metrics # Caminho onde o Servidor Go expõe as métricas
+    static_configs:
+      - targets: ["host.docker.internal:8090"]  # Consumindo rotas de fora do container

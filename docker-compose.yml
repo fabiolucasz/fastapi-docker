@@ -1,27 +1,48 @@
 services:
-  api:
-    build: .
-    ports:
-      - "8000:8000"
+  fastapi-app:
+    build: .  # Mantenha essa se for personalizada
+    container_name: fastapi-app
     environment:
       - SECRET_KEY=${SECRET_KEY}
       - ALGORITHM=${ALGORITHM}
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - DOMAIN=${DOMAIN}
       - ENVIRONMENT=${ENVIRONMENT}
-    restart: unless-stopped
-    volumes:
-      - ./src:/app/src
-  
-  redis:
-    image: redis:7-alpine
     ports:
-      - "6379:6379"
+      - "8000:8000"
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v2.52.0  # Última versão estável até maio/2025
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+
+  grafana:
+    image: grafana/grafana:10.4.2  # Última versão estável até maio/2025
+    container_name: grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
     restart: unless-stopped
     volumes:
-      - redis_data:/data
-      - ./redis.conf:/usr/local/etc/redis/redis.conf
-    command: redis-server /usr/local/etc/redis/redis.conf
+      - grafana-storage:/var/lib/grafana  # Persistência opcional
+
+networks:
+  monitoring:
+    driver: bridge
 
 volumes:
-  redis_data:
+  grafana-storage:
